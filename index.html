@@ -469,7 +469,7 @@ CREATIVE DIRECTION:
           setFavorites([...favorites, currentQuote]);
         }
       };
-
+      
       // Initialize
       useEffect(() => {
         generateAIQuote();
@@ -927,13 +927,9 @@ CREATIVE DIRECTION:
       );
     };
 
-    // Initialize Lucide icons
     window.addEventListener('load', () => {
-      lucide.createIcons();
+      render(<DynamicQuoteSystem />, document.getElementById('root'));
     });
-
-    // Render the app
-    render(<DynamicQuoteSystem />, document.getElementById('root'));
   </script>
 </body>
 </html>
