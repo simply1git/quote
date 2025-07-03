@@ -74,6 +74,7 @@ document.getElementById('shortsFilter').addEventListener('change', async functio
                     <p class="prompt"><strong>Image Prompt:</strong> ${quote.image_prompt}</p>
                     <p><strong>Style:</strong> ${quote.image_style}</p>
                     <p><strong>Keywords:</strong> ${quote.keywords}</p>
+                    <p><strong>Generated At:</strong> ${new Date(quote.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: true, hour: 'numeric', minute: '2-digit', weekday: 'long', month: 'long', day: 'numeric' })}</p>
                     <button onclick="deleteQuote(${quote.id})">Delete</button>
                     <button onclick="openEditModal(${quote.id}, '${quote.quote.replace(/'/g, "\\'")}', '${quote.author.replace(/'/g, "\\'")}', '${quote.image_prompt.replace(/'/g, "\\'")}', '${quote.image_style.replace(/'/g, "\\'")}', '${quote.keywords.replace(/'/g, "\\'")}')">Edit</button>
                 </div>
