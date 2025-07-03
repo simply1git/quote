@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from sqlalchemy importego create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -161,8 +161,8 @@ async def background_generator():
 
 # Start background scheduler
 scheduler = AsyncIOScheduler()
-scheduler.add_job(background_generator, 'interval', seconds=10)
 scheduler.start()
+scheduler.add_job(background_generator, 'interval', seconds=10)
 
 # Pydantic models
 class QuoteResponse(BaseModel):
