@@ -16,6 +16,7 @@ import uvicorn
 import csv
 from io import StringIO
 from fastapi.responses import StreamingResponse
+import pytz  # Added for IST timezone
 
 # Configure logging
 logging.basicConfig(
@@ -143,8 +144,10 @@ async def background_generator():
             if quote and author:
                 image_prompt, image_style = generate_image_prompt(quote, author)
                 if image_prompt:
+                    ist = pytz.timezone('Asia/Kolkata')
+                    ist_time = datetime.now(ist).isoformat()
                     new_quote = Quote(
-                        timestamp=datetime.now().isoformat(),
+                        timestamp=ist_time,
                         quote=quote,
                         author=author,
                         image_prompt=image_prompt,
@@ -189,12 +192,15 @@ async def index(request: Request):
         quotes = session.query(Quote).order_by(Quote.timestamp.desc()).limit(10).all()
         latest_quote = quotes[0] if quotes else None
         session.close()
+        ist = pytz.timezone('Asia/Kolkata')
+        current_time = datetime.now(ist).strftime("%I:%M %p IST on %A, %B %d, %Y")
         return templates.TemplateResponse("index.html", {
             "request": request,
             "quotes": quotes,
             "meta_description": latest_quote.quote if latest_quote else "Inspirational quotes updated every 10 seconds.",
             "og_title": "Inspirational Quote Generator",
-            "og_description": latest_quote.quote if latest_quote else "Discover new quotes for motivation and YouTube content!"
+            "og_description": latest_quote.quote if latest_quote else "Discover new quotes for motivation and YouTube content!",
+            "current_time": current_time
         })
     except Exception as e:
         logging.error(f"Index route error: {e}")
