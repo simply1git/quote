@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Quote System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    import React, { useState, useEffect } from 'react';
+    import { render } from 'react-dom';
+    import { Shuffle, Download, Share2, Heart, TrendingUp, Image, Users, Clock, Star, Zap, Filter, Search, Brain, Sparkles, Target, BarChart3 } from 'lucide-react';
+
+    const DynamicQuoteSystem = () => {
+      const [currentQuote, setCurrentQuote] = useState(null);
+      const [selectedCategory, setSelectedCategory] = useState('philosophy');
+      const [selectedStyle, setSelectedStyle] = useState('photorealistic');
+      const [selectedPlatform, setSelectedPlatform] = useState('instagram');
+      const [selectedFigure, setSelectedFigure] = useState('auto');
+      const [isGenerating, setIsGenerating] = useState(false);
+      const [favorites, setFavorites] = useState([]);
+      const [analytics, setAnalytics] = useState({ views: 0, shares: 0, saves: 0, generated: 0 });
+      const [generationHistory, setGenerationHistory] = useState([]);
+      const [contextSettings, setContextSettings] = useState({
+        mood: 'inspirational',
+        audience: 'general',
+        trending: true,
+        timeRelevance: 'modern'
+      });
+
+      // Historical Figures Database for AI Generation
+      const historicalFigures = {
+        auto: { name: "Auto-Select", era: "Various", expertise: "Best match for category" },
+        einstein: { name: "Albert Einstein", era: "1879-1955", expertise: "Physics, Philosophy, Wisdom" },
+        socrates: { name: "Socrates", era: "470-399 BC", expertise: "Philosophy, Ethics, Wisdom" },
+        churchill: { name: "Winston Churchill", era: "1874-1965", expertise: "Leadership, Courage, Politics" },
+        jobs: { name: "Steve Jobs", era: "1955-2011", expertise: "Innovation, Technology, Vision" },
+        mandela: { name: "Nelson Mandela", era: "1918-2013", expertise: "Leadership, Justice, Perseverance" },
+        curie: { name: "Marie Curie", era: "1867-1934", expertise: "Science, Perseverance, Discovery" },
+        gandhi: { name: "Mahatma Gandhi", era: "1869-1948", expertise: "Peace, Non-violence, Change" },
+        lincoln: { name: "Abraham Lincoln", era: "1809-1865", expertise: "Leadership, Unity, Justice" },
+        davinci: { name: "Leonardo da Vinci", era: "1452-1519", expertise: "Art, Innovation, Curiosity" },
+        shakespeare: { name: "William Shakespeare", era: "1564-1616", expertise: "Literature, Human Nature, Wisdom" },
+        franklin: { name: "Benjamin Franklin", era: "1706-1790", expertise: "Innovation, Wisdom, Diplomacy" }
+      };
+
+      // Categories for AI Generation
+      const categories = {
+        philosophy: {
+          name: "Philosophy & Wisdom",
+          themes: ["meaning of life", "wisdom", "truth", "existence", "consciousness", "ethics", "virtue"],
+          context: "Deep philosophical insights about life, existence, and human nature"
+        },
+        leadership: {
+          name: "Leadership & Success",
+          themes: ["leadership", "vision", "courage", "decision-making", "influence", "responsibility", "growth"],
+          context: "Powerful insights on leadership, management, and achieving success"
+        },
+        innovation: {
+          name: "Innovation & Technology",
+          themes: ["innovation", "creativity", "technology", "progress", "invention", "disruption", "future"],
+          context: "Forward-thinking perspectives on innovation, creativity, and technological advancement"
+        },
+        motivation: {
+          name: "Motivation & Inspiration",
+          themes: ["motivation", "inspiration", "perseverance", "goals", "dreams", "achievement", "potential"],
+          context: "Uplifting and motivational insights to inspire action and personal growth"
+        },
+        science: {
+          name: "Science & Discovery",
+          themes: ["discovery", "knowledge", "curiosity", "experimentation", "truth", "understanding", "exploration"],
+          context: "Scientific wisdom about discovery, knowledge, and understanding the world"
+        },
+        art: {
+          name: "Art & Creativity",
+          themes: ["creativity", "beauty", "expression", "imagination", "artistry", "inspiration", "vision"],
+          context: "Artistic insights about creativity, beauty, and human expression"
+        },
+        business: {
+          name: "Business & Entrepreneurship",
+          themes: ["entrepreneurship", "success", "strategy", "opportunity", "risk", "value", "market"],
+          context: "Business wisdom about entrepreneurship, strategy, and creating value"
+        },
+        life: {
+          name: "Life & Happiness",
+          themes: ["happiness", "fulfillment", "purpose", "relationships", "growth", "balance", "wisdom"],
+          context: "Life wisdom about finding happiness, purpose, and meaningful relationships"
+        }
+      };
+
+      // Visual Styles for AI Image Generation
+      const visualStyles = {
+        photorealistic: {
+          name: "Photorealistic Portrait",
+          description: "Ultra-realistic, professional photography style",
+          prompt: "photorealistic portrait, professional studio lighting, 8k resolution, cinematic composition, dramatic lighting",
+          trending: true,
+          viralScore: 9.2
+        },
+        surreal: {
+          name: "Surreal Artistic",
+          description: "Dream-like, impossible imagery with artistic flair",
+          prompt: "surreal digital art, impossible geometry, floating elements, vivid colors, artistic interpretation, ethereal atmosphere",
+          trending: true,
+          viralScore: 8.9
+        },
+        minimalist: {
+          name: "Minimalist Modern",
+          description: "Clean, simple design with powerful visual impact",
+          prompt: "minimalist design, clean typography, negative space, modern aesthetic, simple color palette, elegant composition",
+          trending: true,
+          viralScore: 8.7
+        },
+        vintage: {
+          name: "Vintage Classic",
+          description: "Nostalgic, retro-inspired visual treatment",
+          prompt: "vintage photograph, sepia tones, aged paper texture, classic typography, nostalgic mood, historical aesthetic",
+          trending: false,
+          viralScore: 7.8
+        },
+        futuristic: {
+          name: "Futuristic Sci-Fi",
+          description: "Sci-fi inspired, technology-forward aesthetic",
+          prompt: "futuristic digital art, neon colors, holographic effects, cyberpunk aesthetic, advanced technology, glowing elements",
+          trending: true,
+          viralScore: 8.5
+        },
+        watercolor: {
+          name: "Watercolor Artistic",
+          description: "Soft, artistic watercolor painting style",
+          prompt: "watercolor painting, soft brushstrokes, flowing colors, artistic texture, painted illustration, organic feel",
+          trending: false,
+          viralScore: 7.5
+        },
+        geometric: {
+          name: "Geometric Abstract",
+          description: "Bold shapes and patterns with modern appeal",
+          prompt: "geometric art, abstract shapes, bold colors, modern pattern design, mathematical precision, contemporary style",
+          trending: true,
+          viralScore: 8.3
+        },
+        cinematic: {
+          name: "Cinematic Epic",
+          description: "Movie-like lighting and composition",
+          prompt: "cinematic lighting, dramatic shadows, film grain, movie poster aesthetic, epic composition, theatrical mood",
+          trending: true,
+          viralScore: 9.0
+        }
+      };
+
+      // Platform Specifications
+      const platforms = {
+        instagram: { 
+          name: "Instagram", 
+          ratio: "1:1", 
+          hashtags: 30, 
+          trending: ["#motivation", "#quotes", "#inspiration", "#wisdom", "#dailyquote", "#mindset"],
+          audience: "Visual-focused, lifestyle, personal growth",
+          optimization: "Square format, high contrast, readable text overlay"
+        },
+        tiktok: { 
+          name: "TikTok", 
+          ratio: "9:16", 
+          hashtags: 5, 
+          trending: ["#fyp", "#motivation", "#quotes", "#viral", "#wisdom", "#inspire"],
+          audience: "Young, trend-focused, short attention span",
+          optimization: "Vertical video format, bold text, trending sounds"
+        },
+        twitter: { 
+          name: "Twitter/X", 
+          ratio: "16:9", 
+          hashtags: 3, 
+          trending: ["#quote", "#motivation", "#wisdom", "#MondayMotivation"],
+          audience: "Professional, news-focused, engagement-driven",
+          optimization: "Horizontal format, concise text, discussion-worthy"
+        },
+        youtube: { 
+          name: "YouTube", 
+          ratio: "16:9", 
+          hashtags: 15, 
+          trending: ["#shorts", "#motivation", "#quotes", "#inspiration", "#wisdom", "#success"],
+          audience: "Educational, entertainment, long-form content",
+          optimization: "Thumbnail-friendly, click-worthy, story-driven"
+        },
+        linkedin: { 
+          name: "LinkedIn", 
+          ratio: "1.91:1", 
+          hashtags: 5, 
+          trending: ["#leadership", "#business", "#professional", "#success", "#career"],
+          audience: "Professional, business-focused, career-oriented",
+          optimization: "Professional tone, business relevance, networking appeal"
+        },
+        pinterest: { 
+          name: "Pinterest", 
+          ratio: "2:3", 
+          hashtags: 20, 
+          trending: ["#quotes", "#motivation", "#inspiration", "#wisdom", "#selfcare", "#mindfulness"],
+          audience: "DIY, lifestyle, visual inspiration, planning",
+          optimization: "Vertical format, Pinterest-friendly design, save-worthy"
+        }
+      };
+
+      // AI Quote Generation Engine
+      const generateAIQuote = async () => {
+        setIsGenerating(true);
+        
+        try {
+          // Simulate AI processing time
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          const category = categories[selectedCategory];
+          const figure = historicalFigures[selectedFigure];
+          const platform = platforms[selectedPlatform];
+          
+          // AI-generated quote based on parameters
+          const generatedQuote = await simulateAIGeneration(category, figure, platform, contextSettings);
+          
+          setCurrentQuote(generatedQuote);
+          setAnalytics(prev => ({ 
+            ...prev, 
+            views: prev.views + 1,
+            generated: prev.generated + 1 
+          }));
+          
+          // Add to generation history
+          setGenerationHistory(prev => [generatedQuote, ...prev.slice(0, 9)]);
+          
+        } catch (error) {
+          console.error('Quote generation failed:', error);
+        } finally {
+          setIsGenerating(false);
+        }
+      };
+
+      // Simulate AI Quote Generation
+      const simulateAIGeneration = async (category, figure, platform, context) => {
+        // AI generation logic simulation
+        const themes = category.themes;
+        const selectedTheme = themes[Math.floor(Math.random() * themes.length)];
+        
+        // Generate quote based on figure and theme
+        const quotes = generateQuoteVariations(figure, selectedTheme, category, context);
+        const selectedQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        
+        return {
+          text: selectedQuote.text,
+          author: figure.name === "Auto-Select" ? selectedQuote.suggestedAuthor : figure.name,
+          theme: selectedTheme,
+          category: category.name,
+          era: figure.era,
+          context: selectedQuote.context,
+          viralScore: calculateViralScore(selectedQuote.text, platform, context),
+          authenticity: selectedQuote.authenticity,
+          generatedAt: new Date().toISOString(),
+          platform: platform.name,
+          aiGenerated: true
+        };
+      };
+
+      // Generate Quote Variations
+      const generateQuoteVariations = (figure, theme, category, context) => {
+        const variations = [];
+        
+        // Philosophy quotes
+        if (category.name.includes('Philosophy')) {
+          variations.push(
+            { text: "The greatest revolution in our generation is the discovery that human beings, by changing the inner attitudes of their minds, can change the outer aspects of their lives.", suggestedAuthor: "William James", context: "Psychological insight", authenticity: 9.5 },
+            { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", suggestedAuthor: "Aristotle", context: "Ethics and character", authenticity: 9.8 },
+            { text: "The only way to make sense out of change is to plunge into it, move with it, and join the dance.", suggestedAuthor: "Alan Watts", context: "Philosophy of change", authenticity: 9.2 }
+          );
+        }
+        
+        // Leadership quotes
+        if (category.name.includes('Leadership')) {
+          variations.push(
+            { text: "A leader is best when people barely know he exists, when his work is done, his aim fulfilled, they will say: we did it ourselves.", suggestedAuthor: "Lao Tzu", context: "Ancient leadership wisdom", authenticity: 9.7 },
+            { text: "The challenge of leadership is to be strong, but not rude; be kind, but not weak; be bold, but not bully; be thoughtful, but not lazy; be humble, but not timid; be proud, but not arrogant; have humor, but without folly.", suggestedAuthor: "Jim Rohn", context: "Modern leadership principles", authenticity: 9.3 },
+            { text: "Management is doing things right; leadership is doing the right things.", suggestedAuthor: "Peter Drucker", context: "Business leadership", authenticity: 9.6 }
+          );
+        }
+        
+        // Innovation quotes
+        if (category.name.includes('Innovation')) {
+          variations.push(
+            { text: "Innovation distinguishes between a leader and a follower.", suggestedAuthor: "Steve Jobs", context: "Technology leadership", authenticity: 9.8 },
+            { text: "The way to get started is to quit talking and begin doing.", suggestedAuthor: "Walt Disney", context: "Action and execution", authenticity: 9.4 },
+            { text: "If you want something new, you have to stop doing something old.", suggestedAuthor: "Peter Drucker", context: "Change management", authenticity: 9.1 }
+          );
+        }
+        
+        // Motivation quotes
+        if (category.name.includes('Motivation')) {
+          variations.push(
+            { text: "The only impossible journey is the one you never begin.", suggestedAuthor: "Tony Robbins", context: "Personal development", authenticity: 9.5 },
+            { text: "Your limitation—it's only your imagination.", suggestedAuthor: "Unknown", context: "Mindset transformation", authenticity: 8.8 },
+            { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", suggestedAuthor: "Winston Churchill", context: "Perseverance", authenticity: 9.7 }
+          );
+        }
+        
+        // Science quotes
+        if (category.name.includes('Science')) {
+          variations.push(
+            { text: "The important thing is not to stop questioning. Curiosity has its own reason for existing.", suggestedAuthor: "Albert Einstein", context: "Scientific curiosity", authenticity: 9.9 },
+            { text: "Science is not only compatible with spirituality; it is a profound source of spirituality.", suggestedAuthor: "Carl Sagan", context: "Science and wonder", authenticity: 9.6 },
+            { text: "Somewhere, something incredible is waiting to be known.", suggestedAuthor: "Carl Sagan", context: "Discovery and exploration", authenticity: 9.4 }
+          );
+        }
+        
+        // Art quotes
+        if (category.name.includes('Art')) {
+          variations.push(
+            { text: "Every artist was first an amateur.", suggestedAuthor: "Ralph Waldo Emerson", context: "Artistic development", authenticity: 9.3 },
+            { text: "Art is the lie that enables us to realize the truth.", suggestedAuthor: "Pablo Picasso", context: "Nature of art", authenticity: 9.5 },
+            { text: "The purpose of art is washing the dust of daily life off our souls.", suggestedAuthor: "Pablo Picasso", context: "Art's emotional impact", authenticity: 9.2 }
+          );
+        }
+        
+        // Business quotes
+        if (category.name.includes('Business')) {
+          variations.push(
+            { text: "The best time to plant a tree was 20 years ago. The second best time is now.", suggestedAuthor: "Chinese Proverb", context: "Timing and action", authenticity: 9.4 },
+            { text: "Your most unhappy customers are your greatest source of learning.", suggestedAuthor: "Bill Gates", context: "Customer feedback", authenticity: 9.1 },
+            { text: "I have not failed. I've just found 10,000 ways that won't work.", suggestedAuthor: "Thomas Edison", context: "Innovation and persistence", authenticity: 9.8 }
+          );
+        }
+        
+        // Life quotes
+        if (category.name.includes('Life')) {
+          variations.push(
+            { text: "Life is what happens to you while you're busy making other plans.", suggestedAuthor: "John Lennon", context: "Life philosophy", authenticity: 9.6 },
+            { text: "The purpose of our lives is to be happy.", suggestedAuthor: "Dalai Lama", context: "Life purpose", authenticity: 9.5 },
+            { text: "In the end, we will remember not the words of our enemies, but the silence of our friends.", suggestedAuthor: "Martin Luther King Jr.", context: "Relationships and loyalty", authenticity: 9.7 }
+          );
+        }
+        
+        return variations;
+      };
+
+      // Calculate Viral Score
+      const calculateViralScore = (text, platform, context) => {
+        let score = 7.0; // Base score
+        
+        // Length optimization
+        if (text.length >= 50 && text.length <= 150) score += 0.5;
+        if (text.length >= 100 && text.length <= 120) score += 0.3;
+        
+        // Emotional words
+        const emotionalWords = ['inspire', 'amazing', 'incredible', 'powerful', 'transform', 'success', 'dream', 'believe', 'achieve'];
+        const emotionalCount = emotionalWords.filter(word => text.toLowerCase().includes(word)).length;
+        score += emotionalCount * 0.2;
+        
+        // Platform specific
+        if (platform.name === 'TikTok' && text.length <= 100) score += 0.4;
+        if (platform.name === 'Instagram' && text.length <= 140) score += 0.3;
+        if (platform.name === 'Twitter/X' && text.length <= 120) score += 0.3;
+        
+        // Context relevance
+        if (context.trending) score += 0.3;
+        if (context.mood === 'inspirational') score += 0.2;
+        if (context.timeRelevance === 'modern') score += 0.2;
+        
+        return Math.min(10, Math.max(6, score)).toFixed(1);
+      };
+
+      // Generate AI Image Prompt
+      const generateAIImagePrompt = () => {
+        if (!currentQuote) return '';
+        
+        const style = visualStyles[selectedStyle];
+        const platform = platforms[selectedPlatform];
+        
+        return `🎨 AI IMAGE GENERATION PROMPT:
+
+QUOTE: "${currentQuote.text}"
+AUTHOR: ${currentQuote.author}
+THEME: ${currentQuote.theme}
+
+VISUAL STYLE: ${style.name}
+- ${style.description}
+- Technical: ${style.prompt}
+- Viral Score: ${style.viralScore}/10
+
+PLATFORM: ${platform.name}
+- Aspect Ratio: ${platform.ratio}
+- Audience: ${platform.audience}
+- Optimization: ${platform.optimization}
+
+COMPOSITION ELEMENTS:
+- Historical period: ${currentQuote.era}
+- Mood: ${contextSettings.mood}
+- Color palette: Match the ${contextSettings.mood} mood
+- Typography: Bold, readable, ${style.name.toLowerCase()} style
+- Background: ${currentQuote.context} themed environment
+- Lighting: Professional, ${style.name.toLowerCase()} lighting setup
+
+TECHNICAL SPECIFICATIONS:
+- Resolution: High-definition, social media optimized
+- Text overlay: Quote prominently displayed
+- Author attribution: Elegant, readable font
+- Brand consistency: Maintain visual identity
+- Engagement optimization: Click-worthy thumbnail potential
+
+CREATIVE DIRECTION:
+- Capture the essence of "${currentQuote.theme}"
+- Reflect ${currentQuote.author}'s era and wisdom
+- Design for ${platform.audience}
+- Maximize viral potential through visual appeal
+- Ensure accessibility and readability across devices`;
+      };
+
+      // Generate Optimized Hashtags
+      const generateOptimizedHashtags = () => {
+        if (!currentQuote) return [];
+        
+        const platform = platforms[selectedPlatform];
+        const category = categories[selectedCategory];
+        
+        const baseHashtags = [
+          ...platform.trending,
+          `#${currentQuote.author.replace(/\s+/g, '').toLowerCase()}`,
+          `#${selectedCategory}`,
+          `#${currentQuote.theme.replace(/\s+/g, '')}`,
+          '#aiQuotes',
+          '#dynamicContent',
+          '#inspiration',
+          '#wisdom',
+          '#motivation',
+          '#quotes',
+          '#success',
+          '#mindset',
+          '#growth',
+          '#life',
+          '#philosophy',
+          '#leadership',
+          '#innovation',
+          '#creativity',
+          '#business',
+          '#personal development'
+        ];
+        
+        // Add trending hashtags based on context
+        if (contextSettings.trending) {
+          baseHashtags.push('#trending', '#viral', '#explore');
+        }
+        
+        // Add time-relevant hashtags
+        const now = new Date();
+        const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' });
+        baseHashtags.push(`#${dayOfWeek}Motivation`);
+        
+        return baseHashtags.slice(0, platform.hashtags);
+      };
+
+      // Toggle favorite
+      const toggleFavorite = () => {
+        if (!currentQuote) return;
+        
+        const isFavorite = favorites.some(fav => fav.text === currentQuote.text);
+        if (isFavorite) {
+          setFavorites(favorites.filter(fav => fav.text !== currentQuote.text));
+        } else {
+          setFavorites([...favorites, currentQuote]);
+        }
+      };
+
+      // Initialize
+      useEffect(() => {
+        generateAIQuote();
+      }, []);
+
+      const isFavorite = currentQuote && favorites.some(fav => fav.text === currentQuote.text);
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+          <div className="max-w-6xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 bg-gradient-to-r from-yellow-400 to-pink-400 bg-clip-text text-transparent">
+                AI Quote Generator
+              </h1>
+              <p className="text-xl text-gray-300 mb-2">
+                Dynamic Content Creation Platform • Powered by Advanced AI
+              </p>
+              <div className="flex justify-center items-center gap-4 text-sm text-gray-400">
+                <span className="flex items-center gap-1">
+                  <Brain className="text-purple-400" size={16} />
+                  AI-Powered Generation
+                </span>
+                <span className="flex items-center gap-1">
+                  <Sparkles className="text-yellow-400" size={16} />
+                  Infinite Variations
+                </span>
+                <span className="flex items-center gap-1">
+                  <Target className="text-green-400" size={16} />
+                  Viral Optimization
+                </span>
+              </div>
+            </div>
+
+            {/* Analytics Dashboard */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-300">Generated</p>
+                    <p className="text-2xl font-bold text-white">{analytics.generated}</p>
+                  </div>
+                  <Brain className="text-purple-400" size={24} />
+                </div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-300">Total Views</p>
+                    <p className="text-2xl font-bold text-white">{analytics.views}</p>
+                  </div>
+                  <TrendingUp className="text-green-400" size={24} />
+                </div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-300">Favorites</p>
+                    <p className="text-2xl font-bold text-white">{favorites.length}</p>
+                  </div>
+                  <Heart className="text-red-400" size={24} />
+                </div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-300">Avg. Viral Score</p>
+                    <p className="text-2xl font-bold text-white">
+                      {currentQuote ? currentQuote.viralScore : '8.5'}
+                    </p>
+                  </div>
+                  <Zap className="text-yellow-400" size={24} />
+                </div>
+              </div>
+            </div>
+
+            {/* AI Control Panel */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20">
+              <div className="flex items-center gap-2 mb-4">
+                <Brain className="text-purple-400" size={24} />
+                <h3 className="text-xl font-bold text-white">AI Generation Controls</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {/* Category */}
+                <div>
+                  <label className="block text-white mb-2 font-semibold">Category</label>
+                  <select 
+                    value={selectedCategory} 
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full p-3 rounded-lg bg-white/20 text-white border border-white/30 focus:border-purple-400 focus:outline-none"
+                  >
+                    {Object.entries(categories).map(([key, cat]) => (
+                      <option key={key} value={key} className="bg-gray-800">
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Historical Figure */}
+                <div>
+                  <label className="block text-white mb-2 font-semibold">Historical Figure</label>
+                  <select 
+                    value={selectedFigure} 
+                    onChange={(e) => setSelectedFigure(e.target.value)}
+                    className="w-full p-3 rounded-lg bg-white/20 text-white border border-white/30 focus:border-purple-400 focus:outline-none"
+                  >
+                    {Object.entries(historicalFigures).map(([key, figure]) => (
+                      <option key={key} value={key} className="bg-gray-800">
+                        {figure.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Visual Style */}
+                <div>
+                  <label className="block text-white mb-2 font-semibold">Visual Style</label>
+                  <select 
+                    value={selectedStyle} 
+                    onChange={(e) => setSelectedStyle(e.target.value)}
+                    className="w-full p-3 rounded-lg bg-white/20 text-white border border-white/30 focus:border-purple-400 focus:outline-none"
+                  >
+                    {Object.entries(visualStyles).map(([key, style]) => (
+                      <option key={key} value={key} className="bg-gray-800">
+                        {style.name} {style.trending ? '🔥' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Platform */}
+                <div>
+                  <label className="block text-white mb-2 font-semibold">Platform</label>
+                  <select 
+                    value={selectedPlatform} 
+                    onChange={(e) => setSelectedPlatform(e.target.value)}
+                    className="w-full p-3 rounded-lg bg-white/20 text-white border border-white/30 focus:border-purple-400 focus:outline-none"
+                  >
+                    {Object.entries(platforms).map(([key, platform]) => (
+                      <option key={key} value={key} className="bg-gray-800">
+                        {platform.name} ({platform.ratio})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Context Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-white mb-2 font-semibold">Mood</label>
+                  <select 
+                    value={contextSettings.mood} 
+                    onChange={(e) => setContextSettings({...contextSettings, mood: e.target.value})}
+                    className="w-full p-3 rounded-lg bg-white/20 text-white border border-white/30 focus:border-purple-400 focus:outline-none"
+                  >
+                    <option value="inspirational" className="bg-gray-800">Inspirational</option>
+                    <option value="motivational" className="bg-gray-800">Motivational</option>
+                    <option value="thoughtful" className="bg-gray-800">Thoughtful</option>
+                    <option value="empowering" className="bg-gray-800">Empowering</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-white mb-2 font-semibold">Audience</label>
+                  <select 
+                    value={contextSettings.audience} 
+                    onChange={(e) => setContextSettings({...contextSettings, audience: e.target.value})}
+                    className="w-full p-3 rounded-lg bg-white/20 text-white border border-white/30 focus:border-purple-400 focus:outline-none"
+                  >
+                    <option value="general" className="bg-gray-800">General</option>
+                    <option value="professional" className="bg-gray-800">Professional</option>
+                    <option value="students" className="bg-gray-800">Students</option>
+                    <option value="entrepreneurs" className="bg-gray-800">Entrepreneurs</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-white mb-2 font-semibold">Trending</label>
+                  <div className="flex items-center gap-2 p-3">
+                    <input
+                      type="checkbox"
+                      checked={contextSettings.trending}
+                      onChange={(e) => setContextSettings({...contextSettings, trending: e.target.checked})}
+                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                    />
+                    <span className="text-white">Use trending topics</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-white mb-2 font-semibold">Time Relevance</label>
+                  <select 
+                    value={contextSettings.timeRelevance} 
+                    onChange={(e) => setContextSettings({...contextSettings, timeRelevance: e.target.value})}
+                    className="w-full p-3 rounded-lg bg-white/20 text-white border border-white/30 focus:border-purple-400 focus:outline-none"
+                  >
+                    <option value="modern" className="bg-gray-800">Modern Context</option>
+                    <option value="historical" className="bg-gray-800">Historical Context</option>
+                    <option value="timeless" className="bg-gray-800">Timeless</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* AI Quote Display */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 mb-8 border border-white/20">
+              {isGenerating ? (
+                <div className="text-center py-12">
+                  <div className="relative">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-400 mx-auto mb-4"></div>
+                    <Brain className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-purple-400" size={24} />
+                  </div>
+                  <p className="text-white text-lg mb-2">AI is generating your quote...</p>
+                  <p className="text-gray-400 text-sm">
+                    Analyzing {categories[selectedCategory].name} • {historicalFigures[selectedFigure].name} • {contextSettings.mood} tone
+                  </p>
+                </div>
+              ) : currentQuote ? (
+                <div className="text-center">
+                  <div className="mb-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 rounded-full text-purple-300 text-sm">
+                      <Sparkles size={16} />
+                      AI Generated Quote
+                    </div>
+                  </div>
+                  
+                  <blockquote className="text-2xl md:text-3xl font-bold text-white mb-6 leading-relaxed">
+                    "{currentQuote.text}"
+                  </blockquote>
+                  
+                  <div className="flex flex-col items-center gap-3 mb-6">
+                    <p className="text-xl text-purple-300 font-semibold">— {currentQuote.author}</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <span className="px-3 py-1 bg-blue-500/30 rounded-full text-sm text-blue-200">
+                        {currentQuote.category}
+                      </span>
+                      <span className="px-3 py-1 bg-green-500/30 rounded-full text-sm text-green-200">
+                        {currentQuote.theme}
+                      </span>
+                      <span className="px-3 py-1 bg-yellow-500/30 rounded-full text-sm text-yellow-200">
+                        {currentQuote.era}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-6 mt-2">
+                      <div className="flex items-center gap-1">
+                        <Zap className="text-yellow-400" size={16} />
+                        <span className="text-yellow-400 font-semibold">
+                          {currentQuote.viralScore}/10 Viral Score
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <BarChart3 className="text-green-400" size={16} />
+                        <span className="text-green-400 font-semibold">
+                          {currentQuote.authenticity}/10 Authenticity
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap justify-center gap-4">
+                    <button
+                      onClick={generateAIQuote}
+                      disabled={isGenerating}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+                    >
+                      <Brain size={20} />
+                      Generate New Quote
+                    </button>
+                    
+                    <button
+                      onClick={toggleFavorite}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl ${
+                        isFavorite 
+                          ? 'bg-red-500 hover:bg-red-600 text-white' 
+                          : 'bg-white/20 hover:bg-white/30 text-white border border-white/30'
+                      }`}
+                    >
+                      <Heart size={20} fill={isFavorite ? 'white' : 'none'} />
+                      {isFavorite ? 'Favorited' : 'Add to Favorites'}
+                    </button>
+                    
+                    <button
+                      onClick={() => setAnalytics(prev => ({ ...prev, shares: prev.shares + 1 }))}
+                      className="flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl border border-white/30"
+                    >
+                      <Share2 size={20} />
+                      Share Quote
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Brain className="text-purple-400 mx-auto mb-4" size={48} />
+                  <p className="text-white text-lg">Ready to generate your first AI quote!</p>
+                  <p className="text-gray-400">Click "Generate New Quote" to begin</p>
+                </div>
+              )}
+            </div>
+
+            {/* Content Creation Panel */}
+            {currentQuote && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* AI Image Prompt */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Image className="text-purple-400" size={24} />
+                    <h3 className="text-xl font-bold text-white">AI Image Generation Prompt</h3>
+                    <span className="px-2 py-1 bg-purple-500/20 rounded-full text-xs text-purple-300">
+                      {visualStyles[selectedStyle].name}
+                    </span>
+                  </div>
+                  <div className="bg-black/20 p-4 rounded-lg border border-white/20 max-h-96 overflow-y-auto">
+                    <pre className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                      {generateAIImagePrompt()}
+                    </pre>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-sm">Viral Score:</span>
+                      <span className="text-yellow-400 font-semibold">{visualStyles[selectedStyle].viralScore}/10</span>
+                    </div>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText(generateAIImagePrompt())}
+                      className="px-3 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg text-sm transition-colors"
+                    >
+                      Copy Prompt
+                    </button>
+                  </div>
+                </div>
+
+                {/* Social Media Optimization */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="text-green-400" size={24} />
+                    <h3 className="text-xl font-bold text-white">Social Media Optimization</h3>
+                    <span className="px-2 py-1 bg-green-500/20 rounded-full text-xs text-green-300">
+                      {platforms[selectedPlatform].name}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-gray-300 font-semibold mb-2">Optimized Hashtags ({generateOptimizedHashtags().length}):</p>
+                      <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                        {generateOptimizedHashtags().map((tag, index) => (
+                          <span key={index} className="px-3 py-1 bg-blue-500/30 rounded-full text-sm text-blue-200">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-gray-300 font-semibold mb-2">Platform Intelligence:</p>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="bg-black/20 p-3 rounded-lg">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-gray-400 text-sm">Aspect Ratio</span>
+                            <span className="text-white font-semibold">{platforms[selectedPlatform].ratio}</span>
+                          </div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-gray-400 text-sm">Max Hashtags</span>
+                            <span className="text-white font-semibold">{platforms[selectedPlatform].hashtags}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400 text-sm">Audience</span>
+                            <span className="text-white font-semibold text-xs">{platforms[selectedPlatform].audience}</span>
+                          </div>
+                        </div>
+                        <div className="bg-black/20 p-3 rounded-lg">
+                          <p className="text-gray-400 text-sm mb-1">Optimization Tips:</p>
+                          <p className="text-white text-sm">{platforms[selectedPlatform].optimization}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Generation History */}
+            {generationHistory.length > 0 && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="text-blue-400" size={24} />
+                  <h3 className="text-xl font-bold text-white">Recent AI Generations</h3>
+                  <span className="px-2 py-1 bg-blue-500/20 rounded-full text-xs text-blue-300">
+                    {generationHistory.length} items
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {generationHistory.slice(0, 4).map((quote, index) => (
+                    <div key={index} className="bg-black/20 p-4 rounded-lg border border-white/20 hover:border-purple-400/50 transition-colors cursor-pointer"
+                         onClick={() => setCurrentQuote(quote)}>
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="px-2 py-1 bg-purple-500/20 rounded-full text-xs text-purple-300">
+                          {quote.category}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Zap className="text-yellow-400" size={12} />
+                          <span className="text-yellow-400 text-xs">{quote.viralScore}</span>
+                        </div>
+                      </div>
+                      <p className="text-white font-semibold text-sm mb-2 line-clamp-2">"{quote.text}"</p>
+                      <p className="text-gray-400 text-xs">— {quote.author}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Favorites Panel */}
+            {favorites.length > 0 && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <Heart className="text-red-400" size={24} />
+                  <h3 className="text-xl font-bold text-white">Your Favorites</h3>
+                  <span className="px-2 py-1 bg-red-500/20 rounded-full text-xs text-red-300">
+                    {favorites.length} saved
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {favorites.slice(0, 4).map((quote, index) => (
+                    <div key={index} className="bg-black/20 p-4 rounded-lg border border-white/20 hover:border-red-400/50 transition-colors cursor-pointer"
+                         onClick={() => setCurrentQuote(quote)}>
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="px-2 py-1 bg-red-500/20 rounded-full text-xs text-red-300">
+                          {quote.aiGenerated ? 'AI Generated' : 'Classic'}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Zap className="text-yellow-400" size={12} />
+                          <span className="text-yellow-400 text-xs">{quote.viralScore}</span>
+                        </div>
+                      </div>
+                      <p className="text-white font-semibold text-sm mb-2 line-clamp-2">"{quote.text}"</p>
+                      <p className="text-gray-400 text-xs">— {quote.author}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="text-center mt-8 pb-8">
+              <p className="text-gray-400 text-sm">
+                Powered by Advanced AI • Dynamic Content Generation • Infinite Possibilities
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // Initialize Lucide icons
+    window.addEventListener('load', () => {
+      lucide.createIcons();
+    });
+
+    // Render the app
+    render(<DynamicQuoteSystem />, document.getElementById('root'));
+  </script>
+</body>
+</html>
