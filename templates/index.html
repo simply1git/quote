@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ meta_description }}">
+    <meta name="keywords" content="inspirational quotes, motivational quotes, wisdom, philosophy, daily inspiration, youtube shorts">
+    <meta name="author" content="Quote Generator">
+    <meta property="og:title" content="{{ og_title }}">
+    <meta property="og:description" content="{{ og_description }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:image" content="https://source.unsplash.com/random/1200x630?inspiration">
+    <title>Inspirational Quote Generator</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Inspirational Quote Generator</h1>
+    <p>Discover new quotes and image prompts every 10 seconds! Perfect for YouTube content.</p>
+    <div class="controls">
+        <label><input type="checkbox" id="shortsFilter"> Show only Shorts-compatible quotes (<40 chars)</label>
+        <button onclick="downloadQuotes('json')">Download JSON</button>
+        <button onclick="downloadQuotes('csv')">Download CSV</button>
+    </div>
+    <div id="quotes">
+        {% for quote in quotes %}
+        <div class="quote" id="quote-{{ quote.id }}">
+            <p>"{{ quote.quote }}"</p>
+            <p class="author">- {{ quote.author }}</p>
+            <p class="prompt"><strong>Image Prompt:</strong> {{ quote.image_prompt }}</p>
+            <p><strong>Style:</strong> {{ quote.image_style }}</p>
+            <p><strong>Keywords:</strong> {{ quote.keywords }}</p>
+            <button onclick="deleteQuote({{ quote.id }})">Delete</button>
+            <button onclick="openEditModal({{ quote.id }}, '{{ quote.quote }}', '{{ quote.author }}', '{{ quote.image_prompt }}', '{{ quote.image_style }}', '{{ quote.keywords }}')">Edit</button>
+        </div>
+        {% endfor %}
+    </div>
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Quote</h2>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <label>Quote: <textarea id="editQuote"></textarea></label>
+                <label>Author: <input type="text" id="editAuthor"></label>
+                <label>Image Prompt: <textarea id="editImagePrompt"></textarea></label>
+                <label>Image Style: <input type="text" id="editImageStyle"></label>
+                <label>Keywords: <input type="text" id="editKeywords"></label>
+                <button type="button" onclick="saveEdit()">Save</button>
+            </form>
+        </div>
+    </div>
+    <script src="/static/scripts.js"></script>
+</body>
+</html>
